@@ -1,6 +1,4 @@
 name: "Set matrix"
-description: "Set dynamic matrix for GitHub Workflows"
-
 on:
   workflow_call:
 
