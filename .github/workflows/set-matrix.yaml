@@ -2,10 +2,10 @@ name: "Set matrix"
 on:
   workflow_call:
     outputs:
-      firstword:
+      matrix-no-e2e:
         description: "Deploy matrix before e2e tests"
         value: ${{ jobs.set-matrix.outputs.matrix-no-e2e }}
-      secondword:
+      matrix-e2e:
         description: "Deploy matrix after e2e tests"
         value: ${{ jobs.set-matrix.outputs.matrix-e2e }}
 
