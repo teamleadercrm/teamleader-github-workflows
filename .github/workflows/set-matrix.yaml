@@ -1,6 +1,13 @@
 name: "Set matrix"
 on:
   workflow_call:
+    outputs:
+      firstword:
+        description: "Deploy matrix before e2e tests"
+        value: ${{ jobs.set-matrix.outputs.matrix-no-e2e }}
+      secondword:
+        description: "Deploy matrix after e2e tests"
+        value: ${{ jobs.set-matrix.outputs.matrix-e2e }}
 
 jobs:
   set-matrix:
@@ -18,18 +25,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
         run: |
-          echo "::set-output name=matrix-no-e2e::$(
+          echo "matrix-no-e2e=$(
               curl -s \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               https://api.github.com/repos/teamleadercrm/${{ github.event.repository.name }}/environments | jq -c '[ .environments[] | select(.protection_rules==[]).name ]'
-          )"        
-          echo "::set-output name=matrix-e2e::$(
+          )" >> $GITHUB_OUTPUT
+          echo "matrix-e2e=$(
               curl -s \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               https://api.github.com/repos/teamleadercrm/${{ github.event.repository.name }}/environments | jq -c '[ .environments[] | select(.protection_rules!=[]).name ]'
-          )"
+          )" >> $GITHUB_OUTPUT
     outputs:
         matrix-no-e2e: ${{ steps.set-matrix.outputs.matrix-no-e2e }}
         matrix-e2e: ${{ steps.set-matrix.outputs.matrix-e2e }}
