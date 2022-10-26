@@ -34,13 +34,13 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    - name: Build ${{ matrix.folder }} container
+    - name: Build ${{ inputs.image }} container
       id: build
       uses: docker/build-push-action@v3
       with:
-        context: ./${{ matrix.folder }}
+        context: ./${{ inputs.image }}
         platforms: linux/amd64
-        file: ${{ matrix.folder }}/.docker/Dockerfile.production
+        file: ${{ inputs.image }}/.docker/Dockerfile.production
         push: ${{ github.event_name != 'pull_request' }}
         tags: teamleader/${{ inputs.image }}:latest, teamleader/${{ inputs.image }}:${{ github.sha }}
         cache-from: type=registry,ref=teamleader/${{ inputs.image }}:latest
