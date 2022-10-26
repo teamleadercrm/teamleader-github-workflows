@@ -2,7 +2,7 @@ name: "Deploy"
 on:
   workflow_call:
     inputs:
-      images:
+      image:
         description: "Name of the images we're deploying"
         required: true
         type: string
