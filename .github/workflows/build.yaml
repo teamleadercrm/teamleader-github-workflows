@@ -38,9 +38,9 @@ jobs:
       id: build
       uses: docker/build-push-action@v3
       with:
-        context: ./${{ github.repository }}-${{ inputs.image }}
+        context: ./${{ inputs.image }}
         platforms: linux/amd64
-        file: ${{ github.repository }}-${{ inputs.image }}/.docker/Dockerfile.production
+        file: ${{ inputs.image }}/.docker/Dockerfile.production
         push: ${{ github.event_name != 'pull_request' }}
         tags: teamleader/${{ github.repository }}-${{ inputs.image }}:latest, teamleader/${{ github.repository }}-${{ inputs.image }}:${{ github.sha }}
         cache-from: type=registry,ref=teamleader/${{ github.repository }}-${{ inputs.image }}:latest
