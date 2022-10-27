@@ -24,10 +24,10 @@ jobs:
     - name: Update Kubernetes resources
       run: |
         cd kustomize/env/${{ inputs.env }}
-        kustomize edit set image php=teamleader/${{ inputs.image }}:${{ github.sha }}
+        kustomize edit set image ${{ inputs.kustomize }}:${{ github.sha }}
         cat kustomization.yaml
     - name: Push changes
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "Bump ${{ inputs.image }} - ${{ inputs.env }} container digest"
+        commit_message: "Bump ${{ inputs.kustomize }} - ${{ inputs.env }} Kustomize image"
         push_options: --force
