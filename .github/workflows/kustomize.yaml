@@ -2,12 +2,8 @@ name: "Kustomize"
 on:
   workflow_call:
     inputs:
-      tag:
-        description: "Tag of the Kustomize placeholder"
-        required: true
-        type: string
-      image:
-        description: "Name of the image that we Kustomize"
+      kustomize:
+        description: "Kustomize tag to image"
         required: true
         type: string
       env:
