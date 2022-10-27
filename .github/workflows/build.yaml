@@ -34,16 +34,16 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    - name: Build ${{ inputs.image }} container
+    - name: Build ${{ github.repository }}-${{ inputs.image }} container
       id: build
       uses: docker/build-push-action@v3
       with:
-        context: ./${{ inputs.image }}
+        context: ./${{ github.repository }}-${{ inputs.image }}
         platforms: linux/amd64
-        file: ${{ inputs.image }}/.docker/Dockerfile.production
+        file: ${{ github.repository }}-${{ inputs.image }}/.docker/Dockerfile.production
         push: ${{ github.event_name != 'pull_request' }}
-        tags: teamleader/${{ inputs.image }}:latest, teamleader/${{ inputs.image }}:${{ github.sha }}
-        cache-from: type=registry,ref=teamleader/${{ inputs.image }}:latest
+        tags: teamleader/${{ github.repository }}-${{ inputs.image }}:latest, teamleader/${{ github.repository }}-${{ inputs.image }}:${{ github.sha }}
+        cache-from: type=registry,ref=teamleader/${{ github.repository }}-${{ inputs.image }}:latest
         cache-to: type=inline
     - name: Set image build digest
       id: set-digest
