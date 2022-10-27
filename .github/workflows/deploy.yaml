@@ -34,7 +34,6 @@ jobs:
       id: build
       uses: docker/build-push-action@v3
       with:
-        context: ./${{ inputs.image }}
         platforms: linux/amd64
         file: ${{ inputs.image }}/.docker/Dockerfile.production
         push: ${{ github.event_name != 'pull_request' }}
