@@ -1,0 +1,37 @@
+name: "Kustomize"
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag of the Kustomize placeholder"
+        required: true
+        type: string
+      image:
+        description: "Name of the image that we Kustomize"
+        required: true
+        type: string
+      env:
+        description: "Environment to update"
+        required: true
+        type: string
+
+jobs:
+  kustomize:
+    runs-on: self-hosted
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+    - name: Setup Kustomize
+      uses: imranismail/setup-kustomize@v1
+      with:
+        kustomize-version: "4.5.x"
+    - name: Update Kubernetes resources
+      run: |
+        cd kustomize/env/${{ inputs.env }}
+        kustomize edit set image php=teamleader/${{ inputs.image }}:${{ github.sha }}
+        cat kustomization.yaml
+    - name: Push changes
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Bump ${{ inputs.image }} - ${{ inputs.env }} container digest"
+        push_options: --force

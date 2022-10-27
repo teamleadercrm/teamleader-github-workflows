@@ -2,41 +2,19 @@ name: "Deploy"
 on:
   workflow_call:
     inputs:
-      image:
-        description: "Name of the images we're deploying"
+      env:
+        description: "Environment to deploy"
         required: true
         type: string
 
 jobs:
-  build:
+  kustomize:
     runs-on: self-hosted
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Context for Buildx
-      id: buildx-context
+    - name: Sync ${{ inputs.env }} Application
       run: |
-        docker context create builders
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v2
-      with:
-        install: true
-        endpoint: builders
-    - name: Login to DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    - name: Build ${{ github.repository }}-${{ inputs.image }} container
-      id: build
-      uses: docker/build-push-action@v3
-      with:
-        platforms: linux/amd64
-        file: ${{ inputs.image }}/.docker/Dockerfile.production
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: teamleader/${{ github.repository }}-${{ inputs.image }}:latest, teamleader/${{ github.repository }}-${{ inputs.image }}:${{ github.sha }}
-        cache-from: type=registry,ref=teamleader/${{ github.repository }}-${{ inputs.image }}:latest
-        cache-to: type=inline
+        export ARGOCD_SERVER=argocd.tool.teamleader.eu
+        export ARGOCD_AUTH_TOKEN=${{ secrets.ARGOCD_TOKEN }}
+        sudo curl -sSL -o /usr/local/bin/argocd https://${ARGOCD_SERVER}/download/argocd-linux-amd64 && sudo chmod +x /usr/local/bin/argocd
+        argocd app sync "${{ github.event.repository.name }}-kustomize-${{ inputs.env }}"
+        argocd app wait "${{ github.event.repository.name }}-kustomize-${{ inputs.env }}"
