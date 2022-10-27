@@ -6,10 +6,6 @@ on:
         description: "Name of the image we're building"
         required: true
         type: string
-    outputs:
-      digest:
-        description: "Digest of the built image"
-        value: ${{ jobs.build.outputs.digest }}
 
 jobs:
   build:
@@ -34,7 +30,7 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    - name: Build ${{ github.repository }}-${{ inputs.image }} container
+    - name: Build ${{ github.event.repository.name }}-${{ inputs.image }} container
       id: build
       uses: docker/build-push-action@v3
       with:
@@ -42,11 +38,6 @@ jobs:
         platforms: linux/amd64
         file: ${{ inputs.image }}/.docker/Dockerfile.production
         push: ${{ github.event_name != 'pull_request' }}
-        tags: teamleader/${{ github.repository }}-${{ inputs.image }}:latest, teamleader/${{ github.repository }}-${{ inputs.image }}:${{ github.sha }}
-        cache-from: type=registry,ref=teamleader/${{ github.repository }}-${{ inputs.image }}:latest
+        tags: teamleader/${{ github.event.repository.name }}-${{ inputs.image }}:latest, teamleader/${{ github.event.repository.name }}-${{ inputs.image }}:${{ github.sha }}
+        cache-from: type=registry,ref=teamleader/${{ github.event.repository.name }}-${{ inputs.image }}:latest
         cache-to: type=inline
-    - name: Set image build digest
-      id: set-digest
-      run: echo "digest=${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
-    outputs:
-      digest: ${{ steps.set-digest.outputs.digest }}
