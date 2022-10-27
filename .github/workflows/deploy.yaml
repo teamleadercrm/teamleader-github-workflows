@@ -38,5 +38,5 @@ jobs:
         file: ${{ inputs.image }}/.docker/Dockerfile.production
         push: ${{ github.event_name != 'pull_request' }}
         tags: teamleader/${{ github.repository }}-${{ inputs.image }}:latest, teamleader/${{ github.repository }}-${{ inputs.image }}:${{ github.sha }}
-#        cache-from: type=registry,ref=teamleader/${{ github.repository }}-${{ inputs.image }}:latest
-#        cache-to: type=inline
+        cache-from: type=registry,ref=teamleader/${{ github.repository }}-${{ inputs.image }}:latest
+        cache-to: type=inline
