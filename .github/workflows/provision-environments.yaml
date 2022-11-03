@@ -1,0 +1,67 @@
+name: "Provision Environments"
+on:
+  workflow_call:
+
+jobs:
+  provision-environments:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@v1
+        with:
+          application_id: ${{ secrets.GH_APPLICATION_ID }}
+          application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
+      - name: Provision Environments
+        env:
+          GITHUB_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+        run: |
+          set -e
+
+          RED="\e[31m"
+          GREEN="\e[32m"
+          YELLOW="\e[33m"
+          ENDCOLOR="\e[0m"
+
+          for i in $(grep -lre ApplicationSet | grep -v environments.yaml)
+          do
+              REPO=$(yq '.spec.template.spec.source.repoURL' $i | cut -d/ -f4-5)
+              ENVS=$(
+                  curl -s \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer $GITHUB_TOKEN" \
+                  https://api.github.com/repos/$REPO/environments | jq -r '.environments[].name'
+              )
+              NEW_ENVS=$(yq '.spec.generators[].list.elements[].env' $i | uniq)
+          
+              echo -e "--- Setup $REPO ---"
+              for j in $NEW_ENVS
+              do
+                  if $(echo -e $ENVS | grep -w -q $j); then
+                  echo -e "${YELLOW}Environment $j already present${ENDCOLOR}"
+                  else
+                  echo -e "${GREEN}Adding environment $j${ENDCOLOR}"
+                  curl -s -o /dev/null \
+                  -X PUT \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer $GITHUB_TOKEN" \
+                  https://api.github.com/repos/$REPO/environments/$j
+                  fi
+              done
+              
+              for j in $ENVS
+              do
+                  if $(echo -e $NEW_ENVS | grep -w -q $j); then
+                      :
+                  else 
+                  echo -e "${RED}Removing obsolete environment $j${ENDCOLOR}"
+                  curl -s -o /dev/null \
+                  -X DELETE \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer $GITHUB_TOKEN" \
+                  https://api.github.com/repos/$REPO/environments/$j
+                  fi
+              done
+              echo -e ""
+          done
