@@ -24,44 +24,39 @@ jobs:
           YELLOW="\e[33m"
           ENDCOLOR="\e[0m"
 
-          for i in $(grep -lre ApplicationSet | grep -v environments.yaml)
+          ENVS=$(
+              curl -s \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              https://api.github.com/repos/teamleadercrm/${{ github.event.repository.name }}/environments | jq -r '.environments[].name'
+          )
+
+          echo -e "--- Setup teamleadercrm/${{ github.event.repository.name }} ---"
+          for j in $NEW_ENVS
           do
-              REPO=$(yq '.spec.template.spec.source.repoURL' $i | cut -d/ -f4-5)
-              ENVS=$(
-                  curl -s \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Authorization: Bearer $GITHUB_TOKEN" \
-                  https://api.github.com/repos/$REPO/environments | jq -r '.environments[].name'
-              )
-              NEW_ENVS=$(yq '.spec.generators[].list.elements[].env' $i | uniq)
-          
-              echo -e "--- Setup $REPO ---"
-              for j in $NEW_ENVS
-              do
-                  if $(echo -e $ENVS | grep -w -q $j); then
-                  echo -e "${YELLOW}Environment $j already present${ENDCOLOR}"
-                  else
-                  echo -e "${GREEN}Adding environment $j${ENDCOLOR}"
-                  curl -s -o /dev/null \
-                  -X PUT \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Authorization: Bearer $GITHUB_TOKEN" \
-                  https://api.github.com/repos/$REPO/environments/$j
-                  fi
-              done
-              
-              for j in $ENVS
-              do
-                  if $(echo -e $NEW_ENVS | grep -w -q $j); then
-                      :
-                  else 
-                  echo -e "${RED}Removing obsolete environment $j${ENDCOLOR}"
-                  curl -s -o /dev/null \
-                  -X DELETE \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Authorization: Bearer $GITHUB_TOKEN" \
-                  https://api.github.com/repos/$REPO/environments/$j
-                  fi
-              done
-              echo -e ""
+              if $(echo -e $ENVS | grep -w -q $j); then
+              echo -e "${YELLOW}Environment $j already present${ENDCOLOR}"
+              else
+              echo -e "${GREEN}Adding environment $j${ENDCOLOR}"
+              curl -s -o /dev/null \
+              -X PUT \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              https://api.github.com/repos/teamleadercrm/${{ github.event.repository.name }}/environments/$j
+              fi
           done
+
+          for j in $ENVS
+          do
+              if $(echo -e $NEW_ENVS | grep -w -q $j); then
+                  :
+              else 
+              echo -e "${RED}Removing obsolete environment $j${ENDCOLOR}"
+              curl -s -o /dev/null \
+              -X DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              https://api.github.com/repos/teamleadercrm/${{ github.event.repository.name }}/environments/$j
+              fi
+          done
+          echo -e ""
