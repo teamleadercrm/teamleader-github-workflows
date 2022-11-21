@@ -31,6 +31,8 @@ jobs:
               https://api.github.com/repos/teamleadercrm/${{ github.event.repository.name }}/environments | jq -r '.environments[].name'
           )
 
+          NEW_ENVS=$(jq -r .env env/*/config.json)
+
           echo -e "--- Setup teamleadercrm/${{ github.event.repository.name }} ---"
           for j in $NEW_ENVS
           do
