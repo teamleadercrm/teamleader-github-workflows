@@ -18,6 +18,9 @@ jobs:
       - name: downcase REPO
         run: |
           echo "FORMATED_PROFILE_NAME=$(echo 'console.log("${{ inputs.profile_name }}".toUpperCase().replace(/-/g, "_"))' | node -)" >> $GITHUB_ENV
+      - name: debug
+        run: |
+          echo ${{format('AWS_{0}_ROLE', env.FORMATED_PROFILE_NAME)}}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1-node16
         with:
