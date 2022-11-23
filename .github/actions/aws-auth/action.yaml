@@ -1,0 +1,30 @@
+name: Configure AWS
+
+inputs:
+  profile_name:
+    description: The AWS Accont name
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: downcase REPO
+      shell: bash
+      run: |
+        echo "FORMATED_PROFILE_NAME=$(echo 'console.log("${{ inputs.profile_name }}".toUpperCase().replace(/-/g, "_"))' | node -)" >> $GITHUB_ENV
+    - name: debug
+      shell: bash
+      run: |
+        echo ${{ secrets[format('AWS_{0}_ROLE', env.FORMATED_PROFILE_NAME)] }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-region: eu-west-1
+        role-to-assume: ${{ secrets[format('AWS_{0}_ROLE', env.FORMATED_PROFILE_NAME)] }}
+    - name: Set AWS Credentials file
+      shell: bash
+      run: |
+        aws configure set aws_session_token ${{ env.AWS_SESSION_TOKEN }} --profile ${{ inputs.profile_name }}
+        aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} --profile ${{ inputs.profile_name }}
+        aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} --profile ${{ inputs.profile_name }}
+
