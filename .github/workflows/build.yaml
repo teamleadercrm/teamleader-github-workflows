@@ -14,6 +14,11 @@ on:
         description: "Location of the image's Dockerfile"
         required: true
         type: string
+      build-args:
+        description: "List of arguments to add to the build"
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -49,3 +54,4 @@ jobs:
         tags: teamleader/${{ inputs.image }}:latest, teamleader/${{ inputs.image }}:${{ github.sha }}
         cache-from: type=registry,ref=teamleader/${{ inputs.image }}:latest
         cache-to: type=inline
+        build-args: ${{ inputs.build-args }}
