@@ -1,6 +1,11 @@
 name: "Deploy frontend"
 on:
   workflow_call:
+    inputs:
+      env:
+        description: "Environment to deploy to"
+        required: true
+        type: string
 
 jobs:
   deploy-frontend:
@@ -30,7 +35,7 @@ jobs:
           node-version: '16'
           cache: 'yarn'
       - name: Set env
-        run: cat env/${{ matrix.env }}/frontend.env >> $GITHUB_ENV
+        run: cat env/${{ inputs.env }}/frontend.env >> $GITHUB_ENV
       - name: AWS Auth
         uses: teamleadercrm/teamleader-github-workflows/.github/actions/aws-auth@master
         with:
@@ -43,7 +48,7 @@ jobs:
           url: https://vault.tool.teamleader.eu
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-              teamleader-staging/data/services/focus/${{ matrix.env }}/${{ matrix.env }}-eks01/web BASIC_AUTHENTICATION_PASSWORD | TEAMLEADER_WEB_PASSWORD
+              teamleader-staging/data/services/focus/${{ inputs.env }}/${{ inputs.env }}-eks01/web BASIC_AUTHENTICATION_PASSWORD | TEAMLEADER_WEB_PASSWORD
       - name: Upload translations
         run: |
           translations=$(cat ${{ env.TRANSLATIONS_FILE }})
