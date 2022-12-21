@@ -77,7 +77,7 @@ jobs:
         run: |
           yarn && yarn build:$YARN_BUILD
       - name: Deploy
-        run: aws s3 sync ./dist s3://${{ env.S3_BUCKET }} --profile ${{ env.AWS_PROFILE }}
+        run: aws s3 sync ./dist s3://${{ env.S3_BUCKET }}${{ env.S3_BUCKET_PATH }} --profile ${{ env.AWS_PROFILE }}
       - name: Invalidate CloudFront
         uses: chetan/invalidate-cloudfront-action@v2
         env:
