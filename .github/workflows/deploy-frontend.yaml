@@ -1,0 +1,81 @@
+name: "Deploy frontend"
+on:
+  workflow_call:
+
+jobs:
+  deploy-frontend:
+    runs-on: self-hosted
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@v2
+        with:
+          application_id: ${{ secrets.GH_APPLICATION_ID }}
+          application_private_key: ${{ secrets.GH_APPLICATION_PRIVATE_KEY }}
+      - name: Check out translations-service
+        uses: actions/checkout@v3
+        with:
+          repository: teamleadercrm/translations-service
+          ref: master
+          token: ${{ steps.get_workflow_token.outputs.token }}
+          path: translations-service
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+      - name: Set env
+        run: cat env/${{ matrix.env }}/frontend.env >> $GITHUB_ENV
+      - name: AWS Auth
+        uses: teamleadercrm/teamleader-github-workflows/.github/actions/aws-auth@master
+        with:
+          aws-profile: ${{ env.AWS_PROFILE }}
+          role-to-assume: ${{ env.IAM_ROLE }}
+      - name: Import teamleader-web-password
+        id: secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: https://vault.tool.teamleader.eu
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+              teamleader-staging/data/services/focus/${{ matrix.env }}/${{ matrix.env }}-eks01/web BASIC_AUTHENTICATION_PASSWORD | TEAMLEADER_WEB_PASSWORD
+      - name: Upload translations
+        run: |
+          translations=$(cat ${{ env.TRANSLATIONS_FILE }})
+          cd translations-service && yarn
+          yarn upload -- \
+            --onesky-access-key=${{ secrets.ONESKY_ACCESS_KEY }} \
+            --onesky-secret-key=${{ secrets.ONESKY_SECRET_KEY }} \
+            --onesky-project-id=${{ env.ONESKY_PROJECT_ID }} \
+            --onesky-file-name=translations.json \
+            --onesky-keep-strings=true \
+            --language=tlh-KL \
+            --translations="$translations"
+      - name: Download translations
+        run: |
+          cd translations-service && yarn
+          mkdir translations
+          yarn download -- \
+            --onesky-access-key=${{ secrets.ONESKY_ACCESS_KEY }} \
+            --onesky-secret-key=${{ secrets.ONESKY_SECRET_KEY }} \
+            --onesky-project-id=${{ env.ONESKY_PROJECT_ID }} \
+            --onesky-project-name=${{ env.ONESKY_PROJECT_NAME }} \
+            --aws-s3-bucket-name=${{ env.S3_BUCKET }} \
+            --teamleader-web-url=${{ env.TEAMLEADER_WEB_URL }} \
+            --teamleader-web-password=${{ steps.secrets.outputs.TEAMLEADER_WEB_PASSWORD }}
+      - name: Build
+        run: |
+          yarn && yarn build:$YARN_BUILD
+      - name: Deploy
+        run: aws s3 sync ./dist s3://${{ env.S3_BUCKET }} --profile ${{ env.AWS_PROFILE }}
+      - name: Invalidate CloudFront
+        uses: chetan/invalidate-cloudfront-action@v2
+        env:
+          DISTRIBUTION: ${{ env.DISTRIBUTION_ID }}
+          PATHS: "/*"
+          AWS_REGION: "${{ env.AWS_REGION }}"
