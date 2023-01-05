@@ -87,7 +87,7 @@ jobs:
       - name: Update manifest
         run: | 
           curl --request POST \
-              --url https://${{ env.TEAMLEADER_WEB_URL }}/update \
+              --url ${{ env.TEAMLEADER_WEB_URL }}/update \
               --header "authorization: Basic $(echo -n user:${{ steps.secrets.outputs.TEAMLEADER_WEB_PASSWORD }} | base64 | tr -d \\n)" \
               --header 'cache-control: no-cache' \
               --header 'content-type: application/json' \
